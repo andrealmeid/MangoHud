@@ -20,6 +20,7 @@
 #include "mesa/util/os_time.h"
 #include "file_utils.h"
 #include "notify.h"
+#include "dbus_info.h"
 
 #include <chrono>
 #include <iomanip>
@@ -86,6 +87,14 @@ void imgui_init()
     init_system_info();
     cfg_inited = true;
     init_cpu_stats(params);
+    if (params.enabled[OVERLAY_PARAM_ENABLED_media_player]) {
+        try {
+            dbusmgr::dbus_mgr.init();
+            get_spotify_metadata(dbusmgr::dbus_mgr, spotify);
+        } catch (std::runtime_error& e) {
+            std::cerr << "Failed to get initial Spotify metadata: " << e.what() << std::endl;
+        }
+    }
 }
 
 void imgui_create(void *ctx)
