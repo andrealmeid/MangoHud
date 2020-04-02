@@ -28,6 +28,6 @@ bool key_is_pressed(KeySym ks) {
 #ifdef _WIN32
 #include <windows.h>
 bool key_is_pressed(KeySym ks) {
-    return GetKeyState(ks);
+    return GetAsyncKeyState(ks) & 0x8000;
 }
 #endif
