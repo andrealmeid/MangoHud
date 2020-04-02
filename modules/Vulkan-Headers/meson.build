@@ -1,5 +1,5 @@
 prog_git = find_program('git')
-if is_unixy
+if is_unixy or host_machine.system() == 'mingw'
 prog_sh = find_program('sh')
 script_clone_hdrs = files('clone_headers.sh')
 else

@@ -68,7 +68,7 @@ if is_unixy
 
 endif
 
-if host_machine.system() == 'windows'
+if ['windows', 'mingw'].contains(host_machine.system())
   vklayer_files += files(
     'file_utils_win32.cpp',
 #    'MangoHud.def',
