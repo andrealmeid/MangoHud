@@ -71,6 +71,7 @@ endif
 if host_machine.system() == 'windows'
   vklayer_files += files(
     'file_utils_win32.cpp',
+#    'MangoHud.def',
   )
 endif
 

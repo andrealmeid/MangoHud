@@ -37,8 +37,8 @@ uint64_t log_start;
 // 	logArray.clear();
 // }
 
-void *logging(void *params_void){
-  overlay_params *params = reinterpret_cast<overlay_params *>(params_void);
+void logging(overlay_params* params){
+
   time_t now_log = time(0);
   tm *log_time = localtime(&now_log);
 	string date = to_string(log_time->tm_year + 1900) + "-" + to_string(1 + log_time->tm_mon) + "-" + to_string(log_time->tm_mday) + "_" + to_string(1 + log_time->tm_hour) + "-" + to_string(1 + log_time->tm_min) + "-" + to_string(1 + log_time->tm_sec);
@@ -59,5 +59,4 @@ void *logging(void *params_void){
   }
   // writeFile(date);
   out.close();
-  return NULL; 
 }

@@ -21,6 +21,10 @@
  * IN THE SOFTWARE.
  */
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -30,6 +34,7 @@
 #include <mutex>
 #include <vector>
 #include <list>
+#include <array>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
@@ -54,11 +59,10 @@
 #include "logging.h"
 #include "keybinds.h"
 #include "cpu.h"
-#include "memory.h"
 #include "notify.h"
 
-#ifdef HAVE_NVML
-#include "loaders/loader_nvml.h"
+#ifdef __gnu_linux__
+#include "memory.h"
 #endif
 
 bool open = false;
@@ -677,6 +681,7 @@ string exec(string command) {
    char buffer[128];
    string result = "";
 
+#ifdef __gnu_linux__
    // Open pipe to file
    FILE* pipe = popen(command.c_str(), "r");
    if (!pipe) {
@@ -692,6 +697,8 @@ string exec(string command) {
    }
 
    pclose(pipe);
+#endif
+
    return result;
 }
 
@@ -836,7 +843,7 @@ void check_keybinds(struct overlay_params& params){
        loggingOn = !loggingOn;
 
        if (loggingOn && log_period != 0)
-         pthread_create(&f2, NULL, &logging, &params);
+         auto f2 = std::thread(logging, &params); //std::ref(params));
 
      }
    }
@@ -2495,6 +2502,12 @@ static void overlay_DestroyInstance(
 #endif
    destroy_instance_data(instance_data);
 }
+
+// Doesn't seem to define for windows
+#ifdef _WIN32
+  #undef VK_LAYER_EXPORT
+  #define VK_LAYER_EXPORT __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+#endif
 
 extern "C" VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL overlay_GetDeviceProcAddr(VkDevice dev,
                                                                              const char *funcName);
