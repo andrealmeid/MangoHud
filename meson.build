@@ -45,9 +45,11 @@ else
 endif
 
 # TODO: this is very incomplete
+is_unixy = false
 if ['linux', 'cygwin', 'gnu'].contains(host_machine.system())
   pre_args += '-D_GNU_SOURCE'
   pre_args += '-DHAVE_PTHREAD'
+  is_unixy = true
 endif
 
 if get_option('glibcxx_asserts')
@@ -105,7 +107,7 @@ if dep_wayland_client.found()
   vulkan_wsi_deps += dep_wayland_client
 endif
 
-if not dep_x11.found() and not dep_wayland_client.found()
+if is_unixy and not dep_x11.found() and not dep_wayland_client.found()
   error('At least one of "with_x11" and "with_wayland" should be enabled')
 endif
 
@@ -181,10 +183,14 @@ foreach a : cpp_args
 endforeach
 
 # check for dl support
-if cc.has_function('dlopen')
-  dep_dl = null_dep
+if is_unixy
+  if cc.has_function('dlopen')
+    dep_dl = null_dep
+  else
+    dep_dl = cc.find_library('dl')
+  endif
 else
-  dep_dl = cc.find_library('dl')
+  dep_dl = null_dep
 endif
 
 if dep_vulkan.found()

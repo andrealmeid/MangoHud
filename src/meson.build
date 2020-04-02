@@ -42,22 +42,37 @@ vklayer_files = files(
   'overlay.cpp',
   'overlay_params.cpp',
   'font_unispace.c',
-  'cpu.cpp',
-  'loaders/loader_nvml.cpp',
-  'nvml.cpp',
-  'file_utils.cpp',
-  'memory.cpp',
   'config.cpp',
-  'iostats.cpp',
-  'gpu.cpp',
-  'notify.cpp',
-  'elfhacks.cpp',
-  'real_dlsym.cpp',
 )
 
-opengl_files = files(
-  'gl/imgui_hud_shared.cpp',
-)
+opengl_files = []
+
+if is_unixy
+  vklayer_files += files(
+    'file_utils.cpp',
+    'cpu.cpp',
+    'memory.cpp',
+    'iostats.cpp',
+    'gpu.cpp',
+    'notify.cpp',
+    'elfhacks.cpp',
+    'real_dlsym.cpp',
+    'loaders/loader_nvml.cpp',
+    'nvml.cpp',
+  )
+
+  pre_args += '-DHAVE_NVML'
+  opengl_files += files(
+    'gl/imgui_hud_shared.cpp',
+  )
+
+endif
+
+if host_machine.system() == 'windows'
+  vklayer_files += files(
+    'file_utils_win32.cpp',
+  )
+endif
 
 pre_args += '-DHOOK_DLSYM'
 inc_opengl = include_directories('gl/gl3w')

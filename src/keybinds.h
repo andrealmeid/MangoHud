@@ -1,6 +1,8 @@
 #pragma once
+#ifdef HAVE_X11
 #include "shared_x11.h"
 #include "loaders/loader_x11.h"
+#endif
 
 #ifndef KeySym
 typedef unsigned long KeySym;

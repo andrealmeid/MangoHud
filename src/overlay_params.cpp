@@ -25,8 +25,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/sysinfo.h>
-#include <wordexp.h>
 #include "imgui.h"
 #include <iostream>
 
@@ -39,6 +37,11 @@
 #ifdef HAVE_X11
 #include <X11/keysym.h>
 #include "loaders/loader_x11.h"
+#endif
+
+#ifdef __gnu_linux__
+//#include <sys/sysinfo.h>
+#include <wordexp.h>
 #endif
 
 static enum overlay_param_position
