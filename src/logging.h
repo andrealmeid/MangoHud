@@ -6,6 +6,8 @@
 
 #include "mesa/util/os_time.h"
 
+#define ONE_SEC 1000000
+
 using namespace std;
 
 string os, cpu, gpu, ram, kernel, driver;
@@ -27,6 +29,7 @@ const char* log_period_env = std::getenv("LOG_PERIOD");
 int num;
 bool loggingOn;
 uint64_t log_start;
+uint64_t write_timeout = os_time_get();
 
 void writeFile(string filename){
   out.open(filename, ios::out | ios::app);
@@ -58,9 +61,14 @@ void *logging(void *params_void){
     elapsedLog = (double)(now - log_start);
     logArray.push_back({fps, frame_time, cpuLoadLog, gpuLoadLog, (int) elapsedLog});
 
-    if ((elapsedLog) >= params->log_duration * 1000000 && params->log_duration)
+    if ((elapsedLog) >= params->log_duration * ONE_SEC && params->log_duration)
       loggingOn = false;
     
+    if (now - write_timeout >= ONE_SEC) {
+      writeFile(params->output_file + date);
+      write_timeout = now;
+    }
+
     this_thread::sleep_for(chrono::milliseconds(log_period));
   }
   writeFile(params->output_file + date);
