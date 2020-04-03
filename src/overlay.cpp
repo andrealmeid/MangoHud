@@ -842,9 +842,10 @@ void check_keybinds(struct overlay_params& params){
        log_start = now;
        loggingOn = !loggingOn;
 
-       if (loggingOn && log_period != 0)
+       if (loggingOn && log_period != 0) {
          auto f2 = std::thread(logging, &params); //std::ref(params));
-
+         f2.detach(); //FIXME hackish
+      }
      }
    }
 
