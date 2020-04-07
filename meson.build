@@ -22,7 +22,7 @@ project('MangoHud',
   ['c', 'cpp'],
   version : 'v0.3.1',
   license : 'MIT',
-  default_options : ['buildtype=release', 'c_std=c99', 'cpp_std=c++14']
+  default_options : ['buildtype=debug', 'c_std=c99', 'cpp_std=c++14']
 )
 
 cc = meson.get_compiler('c')

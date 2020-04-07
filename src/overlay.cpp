@@ -197,7 +197,6 @@ struct swapchain_data {
 
    unsigned n_frames_since_update;
    uint64_t last_fps_update;
-   double frametime;
    double frametimeDisplay;
    const char* cpuString;
    const char* gpuString;
@@ -871,7 +870,7 @@ void init_system_info(){
 #endif
 
       if (!log_period_env || !try_stoi(log_period, log_period_env))
-        log_period = 100;
+        log_period = 10;
 }
 
 void check_keybinds(struct overlay_params& params){
@@ -913,10 +912,13 @@ void update_hud_info(struct swapchain_stats& sw_stats, struct overlay_params& pa
 
    double elapsed = (double)(now - sw_stats.last_fps_update); /* us */
    fps = 1000000.0f * sw_stats.n_frames_since_update / elapsed;
+   frame_time = (now - sw_stats.last_present_time) / 1000.0;
+
+   sw_stats.frame_time = frame_time;
 
    if (sw_stats.last_present_time) {
         sw_stats.frames_stats[f_idx].stats[OVERLAY_PARAM_ENABLED_frame_timing] =
-            now - sw_stats.last_present_time;
+            frame_time;
    }
 
    if (sw_stats.last_fps_update) {
@@ -1007,7 +1009,7 @@ static float get_time_stat(void *_data, int _idx)
       _idx + data->n_frames;
    idx %= ARRAY_SIZE(data->frames_stats);
    /* Time stats are in us. */
-   return data->frames_stats[idx].stats[data->stat_selector] / data->time_dividor;
+   return data->frames_stats[idx].stats[data->stat_selector];
 }
 
 void position_layer(struct overlay_params& params, ImVec2 window_size)
@@ -1134,6 +1136,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
             ImGui::SameLine(0, 1.0f);
             ImGui::PushFont(data.font1);
             ImGui::Text("MHz");
+
             ImGui::PopFont();
             i++;
          }
@@ -1205,7 +1208,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
          ImGui::Text("FPS");
          ImGui::PopFont();
          ImGui::TableNextCell();
-         right_aligned_text(char_width * 4, "%.1f", 1000 / data.fps);
+         right_aligned_text(char_width * 4, "%.1f", data.frame_time);
          ImGui::SameLine(0, 1.0f);
          ImGui::PushFont(data.font1);
          ImGui::Text("ms");
@@ -1244,7 +1247,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
          if ((elapsedLog) >= params.log_duration * 1000000)
             loggingOn = false;
 
-         out << fps << "," <<  cpuLoadLog << "," << gpuLoadLog << "," << (now - log_start) << endl;
+         out << "AHHHHH" << endl;
       }
 
       if (params.enabled[OVERLAY_PARAM_ENABLED_frame_timing]){
@@ -1269,7 +1272,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
          ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
          if (s == OVERLAY_PARAM_ENABLED_frame_timing) {
             double min_time = 0.0f;
-            double max_time = 50.0f;
+            double max_time = 150.0f;
             ImGui::PlotLines(hash, get_time_stat, &data,
                                  ARRAY_SIZE(data.frames_stats), 0,
                                  NULL, min_time, max_time,
@@ -1280,7 +1283,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
       if (params.enabled[OVERLAY_PARAM_ENABLED_frame_timing]){
          ImGui::SameLine(0,1.0f);
          ImGui::PushFont(data.font1);
-         ImGui::Text("%.1f ms", 1000 / data.fps);
+         ImGui::Text("%.1f ms", data.frame_time);
          ImGui::PopFont();
       }
       window_size = ImVec2(window_size.x, ImGui::GetCursorPosY() + 10.0f);

@@ -18,7 +18,8 @@ struct swapchain_stats {
 
    ImFont* font1 = nullptr;
    std::string time;
-   double fps;
+   float fps;
+   float frame_time;
    struct iostats io;
    int total_cpu;
    uint64_t last_present_time;

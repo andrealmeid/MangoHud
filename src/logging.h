@@ -13,13 +13,14 @@ bool sysInfoFetched = false;
 int gpuLoadLog = 0, cpuLoadLog = 0, log_period = 0;
 
 struct logData{
-  double fps;
+  float fps;
+  float frame_time;
   int cpu;
   int gpu;
   int previous;
 };
 
-double fps, elapsedLog;
+double fps, frame_time, elapsedLog;
 std::vector<logData> logArray;
 ofstream out;
 const char* log_period_env = std::getenv("LOG_PERIOD");
@@ -31,7 +32,7 @@ void writeFile(string filename){
   out.open(filename, ios::out | ios::app);
 
   for (size_t i = 0; i < logArray.size(); i++)
-    out << logArray[i].fps << "," << logArray[i].cpu  << "," << logArray[i].gpu << "," << logArray[i].previous << endl;
+    out << logArray[i].fps << "," << logArray[i].frame_time << "," << logArray[i].cpu  << "," << logArray[i].gpu << "," << logArray[i].previous << endl;
 
   out.close();
   logArray.clear();
@@ -51,17 +52,17 @@ void *logging(void *params_void){
   out.open(params->output_file + date, ios::out | ios::app);
   out << "os," << "cpu," << "gpu," << "ram," << "kernel," << "driver" << endl;
   out << os << "," << cpu << "," << gpu << "," << ram << "," << kernel << "," << driver << endl;
+  out.close();
   while (loggingOn){
     uint64_t now = os_time_get();
     elapsedLog = (double)(now - log_start);
-    logArray.push_back({fps, cpuLoadLog, gpuLoadLog, (int) elapsedLog});
+    logArray.push_back({fps, frame_time, cpuLoadLog, gpuLoadLog, (int) elapsedLog});
 
     if ((elapsedLog) >= params->log_duration * 1000000 && params->log_duration)
       loggingOn = false;
     
     this_thread::sleep_for(chrono::milliseconds(log_period));
   }
-  out.close();
   writeFile(params->output_file + date);
   return NULL; 
 }
