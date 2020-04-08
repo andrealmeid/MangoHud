@@ -872,6 +872,9 @@ void init_system_info(){
 
       if (!log_period_env || !try_stoi(log_period, log_period_env))
         log_period = 100;
+
+      if (!log_write_interval_env || !try_stoi(log_write_interval, log_write_interval_env))
+        log_write_interval = 1000000;
 }
 
 void check_keybinds(struct overlay_params& params){
