@@ -60,15 +60,15 @@ void *logging(void *params_void){
     elapsedLog = now - log_start;
     logArray.push_back({fps, cpuLoadLog, gpuLoadLog, elapsedLog});
 
-    if ((elapsedLog) >= params->log_duration * 1000000 && params->log_duration)
-      loggingOn = false;
-
     if (now - last_write >= log_write_interval) {
       writeFile(params->output_file + date);
       last_write = now;
     }
 
-    this_thread::sleep_for(chrono::milliseconds(log_period));
+    if ((elapsedLog) >= params->log_duration * 1000000 && params->log_duration)
+      loggingOn = false;
+    else
+      this_thread::sleep_for(chrono::milliseconds(log_period));
   }
 
   writeFile(params->output_file + date);
