@@ -31,6 +31,9 @@
 #include <vector>
 #include <list>
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
 
@@ -71,6 +74,9 @@ float offset_x, offset_y, hudSpacing;
 int hudFirstRow, hudSecondRow;
 struct amdGpu amdgpu;
 struct fps_limit fps_limit_stats;
+string log_name;
+std::thread write_thread;
+ofstream log_file;
 
 /* Mapped from VkInstace/VkPhysicalDevice */
 struct instance_data {
@@ -888,9 +894,17 @@ void check_keybinds(struct overlay_params& params){
        log_start = now;
        loggingOn = !loggingOn;
 
-       if (loggingOn && log_period != 0)
-         std::thread(logging, &params).detach();
-
+       if (loggingOn)
+         log_file = create_file(params.output_file);
+       else {
+         swap_array(&write_buffer, &read_buffer);
+         std::thread t = std::thread(write_file, &log_file);
+         t.join();
+	 log_file.flush();
+         log_file.close();
+         log_size = log_i;
+         log_i = 0;
+       }
      }
    }
 
@@ -924,11 +938,11 @@ void update_hud_info(struct swapchain_stats& sw_stats, struct overlay_params& pa
    uint64_t now = os_time_get(); /* us */
 
    double elapsed = (double)(now - sw_stats.last_fps_update); /* us */
+   long int frame_time = now - sw_stats.last_present_time;
    fps = 1000000.0f * sw_stats.n_frames_since_update / elapsed;
-
    if (sw_stats.last_present_time) {
         sw_stats.frames_stats[f_idx].stats[OVERLAY_PLOTS_frame_timing] =
-            now - sw_stats.last_present_time;
+	  frame_time;
    }
 
    if (sw_stats.last_fps_update) {
@@ -980,6 +994,41 @@ void update_hud_info(struct swapchain_stats& sw_stats, struct overlay_params& pa
    sw_stats.last_present_time = now;
    sw_stats.n_frames++;
    sw_stats.n_frames_since_update++;
+
+   if (loggingOn) {
+     elapsedLog = now - log_start;
+     if (params.log_duration && (elapsedLog) >= params.log_duration * 1000000) {
+       loggingOn = false;
+       swap_array(&write_buffer, &read_buffer);
+       std::thread t = std::thread(write_file, &log_file);
+       t.join();
+       log_file.flush();
+       log_file.close();
+       log_size = log_i;
+       log_i = 0;
+     } else {
+       //logArray.push_back({fps, frame_time, cpuLoadLog, gpuLoadLog, elapsedLog});
+       write_buffer[log_i].fps = fps;
+       write_buffer[log_i].frametime = frame_time;
+       write_buffer[log_i].cpu = cpuLoadLog;
+       write_buffer[log_i].gpu = gpuLoadLog;
+       write_buffer[log_i].previous = elapsedLog;
+       log_i++;
+     }
+
+     if (log_i == BUF_SIZE) {
+	/*
+        if (write_thread.joinable())
+	    write_thread.join();
+	    */
+
+	swap_array(&write_buffer, &read_buffer);
+	log_size = log_i;
+	log_i = 0;
+	std::thread(write_file, &log_file).detach();
+     }
+   }
+
 }
 
 static void snapshot_swapchain_frame(struct swapchain_data *data)
@@ -1020,6 +1069,7 @@ void position_layer(struct overlay_params& params, ImVec2 window_size)
 
    ImGui::SetNextWindowBgAlpha(params.background_alpha);
    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+
    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8,-3));
    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, params.alpha);
@@ -1323,6 +1373,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
          ImGui::PopFont();
       }
 
+      /*
       if (loggingOn && log_period == 0){
          uint64_t now = os_time_get();
          elapsedLog = (double)(now - log_start);
@@ -1331,6 +1382,7 @@ void render_imgui(swapchain_stats& data, struct overlay_params& params, ImVec2& 
 
          out << fps << "," <<  cpuLoadLog << "," << gpuLoadLog << "," << (now - log_start) << endl;
       }
+      */
 
       if (params.enabled[OVERLAY_PARAM_ENABLED_frame_timing]){
          ImGui::Dummy(ImVec2(0.0f, params.font_size / 2));
